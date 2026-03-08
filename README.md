@@ -8,6 +8,21 @@ Desktop-first poker tracking app for:
 
 Built with React + Express + SQLite, and runnable as an Electron app.
 
+## Quick Start
+
+If you just want to run and use it locally:
+
+1. Install dependencies:
+```bash
+npm install
+```
+2. Start desktop app:
+```bash
+npm run electron:start
+```
+3. Open `+ Upload` and import your Ignition `.txt` files.
+4. Open `Dashboard` to see cumulative profit/EV graphs.
+
 ## Requirements
 
 - Node.js 20+ (recommended)
@@ -103,21 +118,6 @@ Design approach:
 3. Drop or select one or multiple Ignition hand-history `.txt` files
 4. Confirm upload
 5. Review Dashboard graphs/tables
-
-## Quick Start
-
-If you just want to run and use it locally:
-
-1. Install dependencies:
-```bash
-npm install
-```
-2. Start desktop app:
-```bash
-npm run electron:start
-```
-3. Open `+ Upload` and import your Ignition `.txt` files.
-4. Open `Dashboard` to see cumulative profit/EV graphs.
 
 ## Project Scripts
 
