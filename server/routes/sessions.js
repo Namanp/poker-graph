@@ -21,6 +21,156 @@ const upload = multer({
   },
 });
 
+function detectGameTypeWithPlayerCount(filename, site, content, playerCount, providedGameType) {
+  let detectedGameType = detectGameType(filename, { site, content });
+  if (playerCount > 0) {
+    detectedGameType = playerCount === 2 ? 'husng' : 'sng';
+  }
+  return providedGameType || detectedGameType;
+}
+
+function storeSessionAndHands({ sessionId, fileHash, filename, gameType, finalDate, hands }) {
+  const insertSession = db.prepare(`
+    INSERT INTO sessions (id, file_hash, filename, game_type, source, session_date, has_hand_history)
+    VALUES (?, ?, ?, ?, 'online', ?, ?)
+  `);
+
+  const insertSessionResult = db.prepare(`
+    INSERT INTO session_results (id, session_id, net, ev_net, hand_count)
+    VALUES (?, ?, ?, ?, ?)
+  `);
+
+  const insertHand = db.prepare(`
+    INSERT INTO hands (id, session_id, hand_ts, net, ev_net, hand_index)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
+
+  const storeAll = db.transaction(() => {
+    const isHusng = gameType === 'husng';
+    const hasHandHistory = isHusng ? 0 : 1;
+
+    insertSession.run(sessionId, fileHash, filename, gameType, finalDate, hasHandHistory);
+
+    let sessionNet = 0;
+    let sessionEv = 0;
+    for (let i = 0; i < hands.length; i++) {
+      const h = hands[i];
+      sessionNet += h.net;
+      sessionEv += h.evNet ?? h.net;
+      if (!isHusng) {
+        insertHand.run(uuidv4(), sessionId, h.timestamp, h.net, h.evNet ?? null, i + 1);
+      }
+    }
+
+    insertSessionResult.run(
+      uuidv4(),
+      sessionId,
+      Math.round(sessionNet * 100) / 100,
+      Math.round((isHusng ? sessionNet : sessionEv) * 100) / 100,
+      isHusng ? 0 : hands.length
+    );
+  });
+
+  storeAll();
+}
+
+// POST /api/sessions/upload/batch
+router.post('/upload/batch', upload.array('files', 100), async (req, res) => {
+  try {
+    const files = req.files || [];
+    if (files.length === 0) {
+      return res.status(400).json({ error: 'No files uploaded' });
+    }
+
+    const site = req.body.site || 'ignition';
+    const forcedGameType = req.body.gameType || null;
+    const results = [];
+
+    for (const file of files) {
+      const filename = file.originalname;
+      const buffer = file.buffer;
+
+      try {
+        const fileHash = crypto.createHash('sha256').update(buffer).digest('hex');
+        const existing = db.prepare('SELECT id, filename FROM sessions WHERE file_hash = ?').get(fileHash);
+        if (existing) {
+          results.push({
+            filename,
+            status: 'duplicate',
+            message: `Already uploaded (${existing.filename})`,
+            sessionId: existing.id,
+          });
+          continue;
+        }
+
+        const content = buffer.toString('utf-8');
+        const { hands, sessionDate, playerCount } = parseHandHistory(content, { filename, site });
+        if (hands.length === 0) {
+          results.push({ filename, status: 'error', error: 'No valid hands found in file' });
+          continue;
+        }
+
+        const gameType = detectGameTypeWithPlayerCount(
+          filename,
+          site,
+          content,
+          playerCount,
+          forcedGameType
+        );
+
+        if (!gameType) {
+          results.push({
+            filename,
+            status: 'needsGameType',
+            error: 'Could not auto-detect game type',
+          });
+          continue;
+        }
+
+        const sessionId = uuidv4();
+        const finalDate = sessionDate || new Date().toISOString().split('T')[0];
+        storeSessionAndHands({
+          sessionId,
+          fileHash,
+          filename,
+          gameType,
+          finalDate,
+          hands,
+        });
+
+        results.push({
+          filename,
+          status: 'success',
+          sessionId,
+          gameType,
+          handsCount: hands.length,
+          sessionDate: finalDate,
+        });
+      } catch (err) {
+        results.push({
+          filename,
+          status: 'error',
+          error: err.message || 'Failed to process file',
+        });
+      }
+    }
+
+    const summary = results.reduce(
+      (acc, r) => {
+        acc.total += 1;
+        acc[r.status] = (acc[r.status] || 0) + 1;
+        return acc;
+      },
+      { total: 0, success: 0, duplicate: 0, error: 0, needsGameType: 0 }
+    );
+
+    return res.status(200).json({ results, summary });
+  } catch (err) {
+    console.error('Batch upload error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /api/sessions/upload
 router.post('/upload', upload.single('file'), async (req, res) => {
   try {
@@ -53,14 +203,13 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       return res.status(422).json({ error: 'No valid hands found in file' });
     }
 
-    // Detect game type — for tournaments, refine using actual player count from content:
-    //   2 players = HUSNG, 3+ players = sng (multi-table or larger format)
-    //   playerCount null = cash game; 0 = failed to parse seats (fall back to filename)
-    let detectedGameType = detectGameType(filename, { site, content });
-    if (playerCount > 0) {
-      detectedGameType = playerCount === 2 ? 'husng' : 'sng';
-    }
-    const gameType = req.body.gameType || detectedGameType;
+    const gameType = detectGameTypeWithPlayerCount(
+      filename,
+      site,
+      content,
+      playerCount,
+      req.body.gameType
+    );
 
     if (!gameType) {
       // Return the parsed data and let the client choose game type
@@ -85,48 +234,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     const sessionId = uuidv4();
     const finalDate = sessionDate || new Date().toISOString().split('T')[0];
 
-    const insertSession = db.prepare(`
-      INSERT INTO sessions (id, file_hash, filename, game_type, source, session_date, has_hand_history)
-      VALUES (?, ?, ?, ?, 'online', ?, ?)
-    `);
-
-    const insertSessionResult = db.prepare(`
-      INSERT INTO session_results (id, session_id, net, ev_net, hand_count)
-      VALUES (?, ?, ?, ?, ?)
-    `);
-
-    const insertHand = db.prepare(`
-      INSERT INTO hands (id, session_id, hand_ts, net, ev_net, hand_index)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `);
-
-    const storeAll = db.transaction(() => {
-      const isHusng = gameType === 'husng';
-      const hasHandHistory = isHusng ? 0 : 1;
-
-      insertSession.run(sessionId, fileHash, filename, gameType, finalDate, hasHandHistory);
-
-      let sessionNet = 0;
-      let sessionEv = 0;
-      for (let i = 0; i < hands.length; i++) {
-        const h = hands[i];
-        sessionNet += h.net;
-        sessionEv += h.evNet ?? h.net;
-        if (!isHusng) {
-          insertHand.run(uuidv4(), sessionId, h.timestamp, h.net, h.evNet ?? null, i + 1);
-        }
-      }
-
-      insertSessionResult.run(
-        uuidv4(),
-        sessionId,
-        Math.round(sessionNet * 100) / 100,
-        Math.round((isHusng ? sessionNet : sessionEv) * 100) / 100,
-        isHusng ? 0 : hands.length
-      );
-    });
-
-    storeAll();
+    storeSessionAndHands({ sessionId, fileHash, filename, gameType, finalDate, hands });
 
     return res.status(201).json({
       sessionId,
@@ -159,47 +267,14 @@ router.post('/upload/confirm', express.json(), async (req, res) => {
     const sessionId = uuidv4();
     const finalDate = sessionDate || new Date().toISOString().split('T')[0];
 
-    const insertSession = db.prepare(`
-      INSERT INTO sessions (id, file_hash, filename, game_type, source, session_date, has_hand_history)
-      VALUES (?, ?, ?, ?, 'online', ?, ?)
-    `);
-
-    const insertSessionResult = db.prepare(`
-      INSERT INTO session_results (id, session_id, net, ev_net, hand_count)
-      VALUES (?, ?, ?, ?, ?)
-    `);
-
-    const insertHand = db.prepare(`
-      INSERT INTO hands (id, session_id, hand_ts, net, ev_net, hand_index)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `);
-
-    const storeAll = db.transaction(() => {
-      const isHusng = gameType === 'husng';
-      const hasHandHistory = isHusng ? 0 : 1;
-      insertSession.run(sessionId, fileHash, filename || 'unknown.txt', gameType, finalDate, hasHandHistory);
-
-      let sessionNet = 0;
-      let sessionEv = 0;
-      for (let i = 0; i < hands.length; i++) {
-        const h = hands[i];
-        sessionNet += h.net;
-        sessionEv += h.evNet ?? h.net;
-        if (!isHusng) {
-          insertHand.run(uuidv4(), sessionId, h.timestamp, h.net, h.evNet ?? null, i + 1);
-        }
-      }
-
-      insertSessionResult.run(
-        uuidv4(),
-        sessionId,
-        Math.round(sessionNet * 100) / 100,
-        Math.round((isHusng ? sessionNet : sessionEv) * 100) / 100,
-        isHusng ? 0 : hands.length
-      );
+    storeSessionAndHands({
+      sessionId,
+      fileHash,
+      filename: filename || 'unknown.txt',
+      gameType,
+      finalDate,
+      hands,
     });
-
-    storeAll();
 
     return res.status(201).json({
       sessionId,

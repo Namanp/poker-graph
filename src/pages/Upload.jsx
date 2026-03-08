@@ -8,7 +8,7 @@ export default function Upload({ onSuccess }) {
       <div>
         <h2 className="text-2xl font-bold text-white">Upload Hand History</h2>
         <p className="text-gray-400 mt-1">
-          Import your Ignition Poker hand history files to track P&L and EV.
+          Import one or many Ignition Poker hand history files to track P&L and EV.
         </p>
       </div>
 

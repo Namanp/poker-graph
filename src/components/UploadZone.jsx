@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { uploadSession, confirmUpload } from '../api.js';
+import { uploadSession, uploadSessions, confirmUpload } from '../api.js';
 
 const GAME_TYPES = ['10NL', '25NL', '50NL', '100NL', 'husng', 'home_game'];
 
@@ -29,7 +29,6 @@ export default function UploadZone({ onSuccess }) {
       const data = await uploadSession(file);
 
       if (data.needsGameType) {
-        // Server couldn't detect game type; show selector
         setPendingData(data);
         setSelectedGameType('');
         setStatus('needs-type');
@@ -48,6 +47,44 @@ export default function UploadZone({ onSuccess }) {
       }
     }
   }, [onSuccess]);
+
+  const processFiles = useCallback(async (files) => {
+    const validFiles = Array.from(files || []).filter(f => f.name.endsWith('.txt'));
+    if (validFiles.length === 0) {
+      setError('Please upload one or more .txt files');
+      setStatus('error');
+      return;
+    }
+
+    if (validFiles.length === 1) {
+      await processFile(validFiles[0]);
+      return;
+    }
+
+    setStatus('uploading');
+    setError(null);
+    setPendingData(null);
+    setResult(null);
+
+    try {
+      const data = await uploadSessions(validFiles);
+      setResult(data);
+
+      if (data.summary.success > 0) {
+        setStatus('success');
+        onSuccess?.(data);
+      } else if (data.summary.duplicate > 0 && data.summary.error === 0 && data.summary.needsGameType === 0) {
+        setStatus('duplicate');
+        setError('All selected files were duplicates.');
+      } else {
+        setStatus('error');
+        setError('No files were uploaded successfully.');
+      }
+    } catch (err) {
+      setStatus('error');
+      setError(err.message || 'Batch upload failed');
+    }
+  }, [onSuccess, processFile]);
 
   async function handleConfirm() {
     if (!selectedGameType) {
@@ -94,13 +131,11 @@ export default function UploadZone({ onSuccess }) {
   function handleDrop(e) {
     e.preventDefault();
     setDragging(false);
-    const file = e.dataTransfer.files[0];
-    processFile(file);
+    processFiles(e.dataTransfer.files);
   }
 
   function handleFileChange(e) {
-    const file = e.target.files[0];
-    processFile(file);
+    processFiles(e.target.files);
   }
 
   function reset() {
@@ -112,9 +147,10 @@ export default function UploadZone({ onSuccess }) {
     if (fileRef.current) fileRef.current.value = '';
   }
 
+  const isBatchResult = result && Array.isArray(result.results);
+
   return (
     <div className="space-y-4">
-      {/* Drop Zone */}
       {(status === 'idle' || status === 'error' || status === 'duplicate') && (
         <div
           onDragOver={handleDragOver}
@@ -132,6 +168,7 @@ export default function UploadZone({ onSuccess }) {
           <input
             ref={fileRef}
             type="file"
+            multiple
             accept=".txt"
             onChange={handleFileChange}
             className="hidden"
@@ -142,17 +179,16 @@ export default function UploadZone({ onSuccess }) {
             </div>
             <div>
               <p className="text-white font-semibold text-lg">
-                {dragging ? 'Drop it!' : 'Drop your hand history here'}
+                {dragging ? 'Drop files!' : 'Drop your hand histories here'}
               </p>
               <p className="text-gray-500 text-sm mt-1">
-                or click to browse • Ignition .txt files only
+                or click to browse • upload one or many Ignition .txt files
               </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Error */}
       {(status === 'error' || status === 'duplicate') && error && (
         <div className={`rounded-lg p-4 flex items-start gap-3 ${
           status === 'duplicate' ? 'bg-yellow-900/20 border border-yellow-800' : 'bg-red-900/20 border border-red-800'
@@ -167,7 +203,6 @@ export default function UploadZone({ onSuccess }) {
         </div>
       )}
 
-      {/* Uploading */}
       {status === 'uploading' && (
         <div className="card flex items-center gap-4">
           <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />
@@ -178,7 +213,6 @@ export default function UploadZone({ onSuccess }) {
         </div>
       )}
 
-      {/* Needs Game Type Selection */}
       {status === 'needs-type' && pendingData && (
         <div className="card space-y-4">
           <div>
@@ -221,8 +255,7 @@ export default function UploadZone({ onSuccess }) {
         </div>
       )}
 
-      {/* Success */}
-      {status === 'success' && result && (
+      {status === 'success' && result && !isBatchResult && (
         <div className="card border-emerald-800 bg-emerald-900/10 space-y-3">
           <div className="flex items-start gap-3">
             <span className="text-2xl">✅</span>
@@ -249,6 +282,55 @@ export default function UploadZone({ onSuccess }) {
 
           <button onClick={reset} className="btn-secondary w-full">
             Upload Another File
+          </button>
+        </div>
+      )}
+
+      {status === 'success' && isBatchResult && (
+        <div className="card border-emerald-800 bg-emerald-900/10 space-y-4">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">✅</span>
+            <div className="flex-1">
+              <p className="font-semibold text-emerald-300 text-lg">Batch Upload Complete</p>
+              <p className="text-gray-400 text-sm mt-0.5">
+                {result.summary.success} success • {result.summary.duplicate} duplicates • {result.summary.error + result.summary.needsGameType} issues
+              </p>
+            </div>
+          </div>
+
+          <div className="max-h-72 overflow-y-auto rounded-lg border border-gray-800">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-900/60">
+                <tr>
+                  <th className="text-left px-3 py-2 text-gray-400">File</th>
+                  <th className="text-left px-3 py-2 text-gray-400">Status</th>
+                  <th className="text-left px-3 py-2 text-gray-400">Info</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800/50">
+                {result.results.map((r, idx) => (
+                  <tr key={`${r.filename}-${idx}`}>
+                    <td className="px-3 py-2 text-gray-300 truncate max-w-[260px]" title={r.filename}>{r.filename}</td>
+                    <td className={`px-3 py-2 font-medium ${
+                      r.status === 'success' ? 'text-emerald-400' :
+                      r.status === 'duplicate' ? 'text-yellow-400' :
+                      'text-red-400'
+                    }`}>
+                      {r.status}
+                    </td>
+                    <td className="px-3 py-2 text-gray-400">
+                      {r.status === 'success'
+                        ? `${r.handsCount} hands • ${r.gameType}`
+                        : (r.error || r.message || 'n/a')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <button onClick={reset} className="btn-secondary w-full">
+            Upload More Files
           </button>
         </div>
       )}

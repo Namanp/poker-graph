@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'node:path';
 import db from './db.js';
 import sessionsRouter from './routes/sessions.js';
 import handsRouter from './routes/hands.js';
@@ -9,8 +10,24 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
+const allowedOrigins = new Set([
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:3001',
+  'http://127.0.0.1:3001',
+  'file://',
+  'null',
+]);
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  origin: (origin, cb) => {
+    // No origin is common for local desktop and curl-style requests.
+    if (!origin || allowedOrigins.has(origin)) {
+      cb(null, true);
+      return;
+    }
+    cb(new Error(`CORS blocked for origin: ${origin}`));
+  },
   credentials: true,
 }));
 app.use(express.json({ limit: '50mb' }));
@@ -76,6 +93,19 @@ app.get('/api/global', (req, res) => {
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// In Electron production, serve the built frontend from the backend process.
+if (process.env.POKER_GRAPH_ELECTRON === '1' && process.env.POKER_GRAPH_DIST_DIR) {
+  const distDir = process.env.POKER_GRAPH_DIST_DIR;
+  app.use(express.static(distDir));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/')) {
+      next();
+      return;
+    }
+    res.sendFile(path.join(distDir, 'index.html'));
+  });
+}
 
 // Error handler
 app.use((err, req, res, next) => {

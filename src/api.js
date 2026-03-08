@@ -1,4 +1,6 @@
-const BASE = '/api';
+const BASE = window.location.protocol === 'file:'
+  ? 'http://127.0.0.1:3001/api'
+  : '/api';
 
 async function handleResponse(res) {
   const data = await res.json().catch(() => ({}));
@@ -28,6 +30,20 @@ export async function uploadSession(file, gameType) {
   if (gameType) formData.append('gameType', gameType);
 
   const res = await fetch(`${BASE}/sessions/upload`, {
+    method: 'POST',
+    body: formData,
+  });
+  return handleResponse(res);
+}
+
+export async function uploadSessions(files, gameType) {
+  const formData = new FormData();
+  for (const file of files) {
+    formData.append('files', file);
+  }
+  if (gameType) formData.append('gameType', gameType);
+
+  const res = await fetch(`${BASE}/sessions/upload/batch`, {
     method: 'POST',
     body: formData,
   });
