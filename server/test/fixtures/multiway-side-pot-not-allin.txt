@@ -1,0 +1,49 @@
+Ignition Hand #4871721337 TBL#36509766 HOLDEM No Limit - 2026-03-05 01:38:08
+Seat 1: Small Blind ($37.99 in chips)
+Seat 2: Big Blind ($25 in chips)
+Seat 3: UTG ($19.25 in chips)
+Seat 4: UTG+1 [ME] ($41.62 in chips)
+Seat 5: UTG+2 ($31.89 in chips)
+Seat 6: Dealer ($31.30 in chips)
+Dealer : Set dealer [6]
+Small Blind : Small Blind $0.10
+Big Blind : Big blind $0.25
+*** HOLE CARDS ***
+Small Blind : Card dealt to a spot [Qs 7s]
+Big Blind : Card dealt to a spot [Ad As]
+UTG : Card dealt to a spot [6h 5s]
+UTG+1 [ME] : Card dealt to a spot [9d Td]
+UTG+2 : Card dealt to a spot [4d 7c]
+Dealer : Card dealt to a spot [4h 3h]
+UTG : Calls $0.25
+UTG+1 [ME] : Raises $1 to $1
+UTG+2 : Folds
+Dealer : Folds
+Small Blind : Folds
+Big Blind : Raises $3.60 to $3.85
+UTG : Calls $3.60
+UTG+1 [ME] : Calls $2.85
+*** FLOP *** [Tc Ts 8s]
+Big Blind : Checks
+UTG : All-in $15.40
+UTG+1 [ME] : Calls $15.40
+Big Blind : All-in(raise) $21.15 to $21.15
+UTG+1 [ME] : Calls $5.75
+*** TURN *** [Tc Ts 8s] [Kh]
+*** RIVER *** [Tc Ts 8s Kh] [7h]
+Big Blind : Showdown [As Ad Ts Tc Kh] (Two pair)
+UTG : Showdown [Ts Tc Kh 8s 7h] (One pair)
+UTG+1 [ME] : Showdown [Ts Td Tc Kh 9d] (Three of a kind)
+UTG+1 [ME] : Hand result-Side pot $11.17
+UTG+1 [ME] : Hand result $56.18
+Big Blind : Table deposit $25
+UTG : Seat sit out
+*** SUMMARY ***
+Total Pot($69.35)
+Board [Tc Ts 8s Kh 7h]
+Seat+1: Small Blind Folded before the FLOP
+Seat+2: Big Blind  lost with Two pair [Ad As-As Ad Ts Tc Kh]
+Seat+3: UTG  lost with One pair [6h 5s-Ts Tc Kh 8s 7h]
+Seat+4: UTG+1 $67.35  with Three of a kind [9d Td-Ts Td Tc Kh 9d]
+Seat+5: UTG+2 Folded before the FLOP
+Seat+6: Dealer Folded before the FLOP

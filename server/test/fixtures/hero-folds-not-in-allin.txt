@@ -1,0 +1,44 @@
+Ignition Hand #4871700571 TBL#36509766 HOLDEM No Limit - 2026-03-05 00:08:48
+Seat 1: Small Blind ($20.88 in chips)
+Seat 2: Big Blind ($25 in chips)
+Seat 3: UTG ($17.94 in chips)
+Seat 4: UTG+1 [ME] ($44.57 in chips)
+Seat 5: UTG+2 ($20.18 in chips)
+Small Blind : Small Blind $0.10
+Big Blind : Big blind $0.25
+*** HOLE CARDS ***
+Small Blind : Card dealt to a spot [3c 2c]
+Big Blind : Card dealt to a spot [Ac Kc]
+UTG : Card dealt to a spot [7s Kh]
+UTG+1 [ME] : Card dealt to a spot [9c 3h]
+UTG+2 : Card dealt to a spot [4s 4d]
+UTG : Folds
+UTG+1 [ME] : Folds
+UTG+2 : Raises $0.63 to $0.63
+Small Blind : Folds
+Big Blind : Raises $1.74 to $1.99
+UTG+2 : Calls $1.36
+*** FLOP *** [6h 4c Ks]
+Big Blind : Checks
+UTG+2 : Checks
+*** TURN *** [6h 4c Ks] [4h]
+Big Blind : Checks
+UTG+2 : Checks
+*** RIVER *** [6h 4c Ks 4h] [As]
+Big Blind : Checks
+UTG+2 : Bets $3.88
+Big Blind : All-in(raise) $23.01 to $23.01
+UTG+2 : All-in $14.31
+Big Blind : Return uncalled portion of bet $4.82
+Big Blind : Showdown [As Ac Ks Kc 6h] (Two pair)
+UTG+2 : Showdown [4s 4h 4d 4c As] (Four of a kind)
+UTG+2 : Hand result $38.46
+UTG : Table deposit $7.06
+*** SUMMARY ***
+Total Pot($40.46)
+Board [6h 4c Ks 4h As]
+Seat+1: Small Blind Folded before the FLOP
+Seat+2: Big Blind  lost with Two pair [Ac Kc-As Ac Ks Kc 6h]
+Seat+3: UTG Folded before the FLOP
+Seat+4: UTG+1 Folded before the FLOP
+Seat+5: UTG+2 $38.46  with Four of a kind [4s 4d-4s 4h 4d 4c As]

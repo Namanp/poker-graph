@@ -1,0 +1,31 @@
+Ignition Hand #TEST005 TBL#99999 HOLDEM No Limit - 2026-01-01 00:00:00
+Seat 1: UTG ($10 in chips)
+Seat 2: Small Blind ($10 in chips)
+Seat 3: Big Blind [ME] ($10 in chips)
+UTG : Set dealer [1]
+Small Blind : Small blind $0.10
+Big Blind [ME] : Big blind $0.25
+*** HOLE CARDS ***
+UTG : Card dealt to a spot [Jh Jd]
+Small Blind : Card dealt to a spot [Ks Kc]
+Big Blind [ME] : Card dealt to a spot [Ah As]
+UTG : Calls $0.25
+Small Blind : Calls $0.15
+Big Blind [ME] : Checks
+*** FLOP *** [2c 7d 9h]
+Big Blind [ME] : Checks
+UTG : All-in $9.75
+Small Blind : Calls $9.75 All-in
+Big Blind [ME] : Calls $9.75
+*** TURN *** [2c 7d 9h] [3s]
+*** RIVER *** [2c 7d 9h 3s] [5h]
+UTG : Showdown [Jh Jd Jh 9h 7d] (One pair)
+Small Blind : Showdown [Ks Kc Ks 9h 7d] (One pair)
+Big Blind [ME] : Showdown [Ah As Ah 9h 7d] (One pair)
+Big Blind [ME] : Hand result $29.25
+*** SUMMARY ***
+Total Pot($30)
+Board [2c 7d 9h 3s 5h]
+Seat+1: UTG  lost
+Seat+2: Small Blind  lost
+Seat+3: Big Blind $29.25  won
