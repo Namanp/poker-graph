@@ -5,7 +5,7 @@ import {
   parseCards,
 } from './shared.js';
 
-const CASH_HAND_ID_RE = /Ignition Hand #(\S+)\s+TBL/;
+const CASH_HAND_ID_RE = /Ignition Hand #(\S+)\s+(?:TBL|Zone Poker)/;
 const SEAT_LINE_RE = /^Seat \d+: (.+?) \(\$([0-9,.]+) in chips\)/;
 const TOTAL_POT_RE = /Total [Pp]ot[:(]?\s*\$?([0-9,.]+)/;
 const FLOP_RE = /\*\*\* FLOP \*\*\* \[([^\]]+)\]/;
