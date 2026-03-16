@@ -26,6 +26,10 @@ const UNCALLED_RE = /^Return uncalled portion of bet \$([0-9,.]+)/i;
 const RESULT_RE = /^Hand result[^$]*\$([0-9,.]+)/i;
 const WIN_RE = /^Wins \$([0-9,.]+)/i;
 
+function normalizeName(name) {
+  return name.replace(/\s+/g, ' ').trim();
+}
+
 function parseSeatInfo(lines) {
   const players = {};
   let mePlayerName = null;
@@ -34,7 +38,7 @@ function parseSeatInfo(lines) {
     const m = line.match(SEAT_LINE_RE);
     if (!m) continue;
 
-    const name = m[1].trim();
+    const name = normalizeName(m[1]);
     players[name] = { stack: parseAmount(m[2]) };
 
     if (name.includes('[ME]')) {
@@ -52,7 +56,7 @@ function parseHoleCards(lines) {
     const m = line.match(ACTION_LINE_RE);
     if (!m) continue;
 
-    const actor = m[1].trim();
+    const actor = normalizeName(m[1]);
     const action = m[2].trim();
     const cardsMatch = action.match(/\[([2-9TJQKA][cdhs]) ([2-9TJQKA][cdhs])\]/);
     if (!cardsMatch) continue;
@@ -97,7 +101,7 @@ function parseEvents(lines) {
     const m = line.match(ACTION_LINE_RE);
     if (!m) continue;
 
-    const actor = m[1].trim();
+    const actor = normalizeName(m[1]);
     const action = m[2].trim();
 
     let mm;
